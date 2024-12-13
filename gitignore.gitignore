@@ -6,6 +6,10 @@
 
 .RData
 *.csv
+aqi_value.csv
+course_record.csv
+marathon_dates.csv
+project1.csv
 
 .Ruserdata
  *.csv
