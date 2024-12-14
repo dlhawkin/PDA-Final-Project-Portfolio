@@ -6,6 +6,10 @@ The focus of this study is to design a simulation study to investigate optimal e
 
 In conclusion, the simulation model study effectively demonstrated the intricate trade-offs inherent in optimizing study design under budgetary constraints while balancing statistical performance measures such as variance, cost-efficiency, and intra-class correlation coefficients (ICC).
 
+`Project3Simulation.pdf`: Finalize report that consist of the exploratory data analysis and  assessING baseline variables as potential 
+moderators of the behavioral treatment effects on end-of-treatment (EOT) abstinence `Final_Report_Project2.Rmd` : Rmd file that contains code, 
+analysis and interpretations.
+
 
 https://github.com/dlhawkin/PDA-Final-Project-Portfolio/blob/main/Project%203/Project3Simulation.pdf
 # Dependencies
