@@ -11,7 +11,7 @@ and continous variables with association to abstinence. After finding the covari
 implement an multiple imputation to create several datasets (5) to account for uncertainities around missing data. Following impuation mechanisms,
 we will implement logistic and lasso regression modeling to find significant baseline predictors of abstinence.
 
-In conclusion, I discovered that ... 
+In conclusion, I discovered that  **NMR**, **readiness to quit**, **race/ethnicity**, **menthol use**, **cigarettes per day**, **income level**, and **age** are critical moderators that influence the effectiveness of treatments and the likelihood of abstinence.
 
 
 
