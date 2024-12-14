@@ -20,3 +20,4 @@ In conclusion, I discovered that ...
 moderators of the behavioral treatment effects on end-of-treatment (EOT) abstinence `Final_Report_Project2.Rmd` : Rmd file that contains code, 
 analysis and interpretations.
 
+![adjustedtable2](https://github.com/user-attachments/assets/cfcd32e1-1b52-482c-b619-faecc09bbd88)
