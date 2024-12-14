@@ -6,6 +6,8 @@ The focus of this study is to design a simulation study to investigate optimal e
 
 In conclusion, the simulation model study effectively demonstrated the intricate trade-offs inherent in optimizing study design under budgetary constraints while balancing statistical performance measures such as variance, cost-efficiency, and intra-class correlation coefficients (ICC).
 
+
+https://github.com/dlhawkin/PDA-Final-Project-Portfolio/blob/main/Project%203/Project3Simulation.pdf
 # Dependencies
 
 The R version and poackages used in this project are indicated below: R version 4.2.3 (2023-03-15)
