@@ -1,0 +1,1453 @@
+---
+title: "Assessing Baseline Variables as Potential Moderators of the Behavioral Treatment Effects on End-of-treatment (EOT) Abstinence"
+author: "Diahmin Hawkins"
+date: "11/6/2024"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE,
+                      message = FALSE,
+                      echo = FALSE,
+                      fig.align = "center")
+```
+
+
+
+
+```{r}
+library(readr)
+library(tidyverse) 
+library(dplyr)
+library(ggplot2)
+library(MASS)
+library(tidyr)
+library(kableExtra)
+library(knitr)
+library(GGally)
+library(naniar)
+library(visdat)
+library(gtsummary)
+library(gt)
+library(mice)
+library(corrplot) 
+library(reshape2)
+library(ggwordcloud)
+library(magick)
+library(glmnet)
+library(caret)
+library(car)
+library(broom)
+library(gridExtra)
+library(pROC)
+library(broom)
+
+```
+
+```{r, eval=FALSE}
+
+
+
+# Path to your image
+fig_path2 <- "/Users/diahminhawkins/Documents/GitHub/Project2/SmokePicture.png"
+
+# Load the image using magick
+img2<- image_read(fig_path2)
+
+# Convert image to raster for use in ggplot
+img_raster2<- as.raster(img2)
+
+
+# Example data
+words <- c("Smoking Cessation", "Depression", "MDD", "Readiness", "FTCD", 
+           "Menthol", "Antidepressant", "Gender", "Carbon Monoxide", "BDI", 
+           "Duration", "Waking up Smoking", "Psychiatric Diagnosis", "Black", "Hispanic","Non-white Hispanic", 
+         "Anhedonia","Complimentary Reinforcers", "Substitute Reinforcers",
+         "Cigarette Reward", "Varenicline", "Behavioral Activations", "Pharmacotherapy","Psychotherapy")
+
+frequencies <- c(1, 18, 1, 16, 14, 55, 5, 1, 4, 42, 3, 14, 14, 18, 16, 4,7,9,10,22, 55, 36, 40,55)
+
+new_frame <- data.frame(words, frequencies)
+
+# Generate the word cloud on top of the image background
+ggplot(new_frame, aes(label = words, size = frequencies)) +
+  # Add the image background
+  annotation_raster(img_raster2, xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf) +
+  
+  # Generate the word cloud
+  geom_text_wordcloud(aes(color = frequencies)) +
+  scale_size_area(max_size = 10) +
+  
+  # Customize the colors of the words
+  scale_color_gradient(low = "white", high = "black") +
+  
+  # Remove axis titles and labels since we want the word cloud only
+  theme_void()
+
+
+```
+# Abstract
+
+
+
+# Introduction 
+
+Mental health disorders are among the most common health conditions associated with tobacco dependence. Studies have shown that smokers with depression find smoking more pleasurable and are more dependent on nicotine, leading to more severe withdrawal symptoms than smokers without major depressive disorder (MDD).  "Smokers with depression are more likely to smoke heavily, perceive smoking as more pleasureable than other traditionally rewarding activities, show greater dependence and experience more severe withdrawal than smokers without MDD (Hitsman, Papandonatos, et al., 1711). Dr. George Papandonatos, from Brown University’s highly regarded Biostatistics Department, investigated smoking cessation outcomes in adults diagnosed with MDD.
+
+
+The motivation behind this study stems from the need to address tobacco dependence in individuals with major depressive disorder(MDD). Due to high prevalence of smoking among people with MDD, more than 30% of individuals with depression are daily smokers. Smokers that has depression, tend to smoke more heavily and frequently, which causes a greater dependence.  To evaluate the impact of tobacco dependence on individuals with MDD,  this study was conducted in research clinics at Northwestern University (Chicago, IL) and the University of Pennsylvania (Philadelphia, PA). Recruitment for this study was conducted between 06/01/2015 and 03/13/2020. This study employed a randomized, placebo-controlled, 2x2 factorial design to compare behavioral activation for smoking cessation (BASC) against standard behavioral treatment (ST), with an additional comparison of varenicline versus placebo. This study included 300 adult smokers with either current or past MDD.  
+
+Findings indicated that BASC did not surpass standard behavioral treatment in effectiveness, regardless of concurrent varenicline therapy.It also indicate that individuals with MDD tend to smoke more heavily, exhibit greater nicotine dependence, and endure more severe withdrawal symptoms than individuals without MDD. Studies have found strong evidence that the varenicline treatment improved short and long term abstinence rates compared to placebo among racially and  socioeconomically diverse groups with varied motivations and psychiatric presentations (Hitsman, Papandonatos, et al., 1722). While varenicline has proven effective in supporting smoking cessation, addressing the psychological aspects of smoking behavior, particularly those linked to depression, may further enhance cessation rates among adults with MDD.
+
+In this analysis, we will focus on three primary aims. The first aim is to assess baseline characteristics as potential moderators of the effects of behavioral treatment on end-of-treatment (EOT) abstinence. The second aim is to investigate whether baseline predictors of abstinence vary depending on the type of behavioral intervention and pharmacotherapy administered. The third aim is to identify which baseline variables (e.g., demographic, psychological, and clinical factors) have the strongest influence on abstinence outcomes. We hypothesize that certain baseline characteristics like (race, income, educ) will significantly interact with treatment type, influencing the likelihood of smoking cessation. interact with treatment type, influencing the likelihood of smoking cessation.
+
+
+
+```{r}
+#Load the data in
+project2<- read_csv("project2.csv")
+
+
+#Check for missing data
+#project2%>% vis_dat()
+#vis_miss(project2)
+#project2%>% glimpse()
+```
+# Methods
+
+## Missingness
+The raw data used for this analysis consisted of 300 rows and 25 columns. To begin this analysis, I got the sum of missing values from the dataset by columns. From this analysis, it was observed that the variables `Income`, `FTCD Score at Baseline`, `Cigarette Reward Value at  Baseline`, `Anhedonia`, `Nicotine Metabolism Ratio`, `Exclusive Mentholated Cigarette User`, and`Baseline Readiness to Quit Smoking` contained missing data. The missing data were examined using the `naniar` package in R to determine the percentage missing and available in the data. Following this procedure, there is a percentage of 21.67% of missing data.The missing percentage goes as follows: Income(1%), FTCD Score at Baseline (.33%), Cigarette Reward Value at  Baseline (6%), Anhedonia (1%), Nicotine Metabolism Ratio (7%), Exclusive Mentholated Cigarette User(.67%), and Baseline Readiness to Quit Smoking (5.67%). To further quantify the extent of missingness, the `naniar package` in R was employed to calculate the percentage of missing and available data.The missing data represent only .9% of the dataset, while 99.1% of the data remains well-represented. Therefore,these missing data properties led to the implementation imputation.
+
+
+
+```{r}  
+#Get all the missing data from each column
+Missing_Data<- sapply(project2, function(x) sum(is.na(x)))
+# Convert to dataframe
+Missing_Data_df <- data.frame(ColumnName = names(Missing_Data), `Missing Data` = Missing_Data)
+
+# Set names for the dataframe columns if necessary
+names(Missing_Data_df) <- c("Variables", "Missing Data")
+
+# Calculate the total number of rows in the dataset
+total_rows <- nrow(project2)  
+
+
+#Create Missing Data Summary
+missing_data_summary <-Missing_Data_df %>%  
+  filter(Variables %in% c('ftcd_score', 'inc', 'crv_total_pq1', 'shaps_score_pq1', 
+                          'NMR', 'Only.Menthol', 'readiness')) %>%
+    mutate(Percent_Missing = (`Missing Data` / total_rows) * 100) %>%
+  dplyr::select(Variables, `Missing Data`, Percent_Missing)%>%
+  mutate(Variables = case_when(
+   Variables == "ftcd_score" ~ "FTCD Score at Baseline",
+     Variables == "inc" ~ "Income",
+    Variables == "crv_total_pq1" ~ "Cigarette Reward Value at  Baseline",
+   Variables == "shaps_score_pq1" ~ "Anhedonia",
+    Variables == "NMR" ~ "Nicotine Metabolism Ratio",
+    Variables == "Only.Menthol" ~ "Exclusive Mentholated Cigarette User",
+    Variables == "readiness" ~ "Baseline Readiness to Quit Smoking"))
+
+# Obtain the total missing data and the percentage or missing data
+total_missing <- sum(missing_data_summary$`Missing Data`)
+percent_missing_total <- (total_missing / total_rows) * 100
+
+#Create row to combine with the summart table
+total_row <- data.frame(
+  Variables = "Total",
+  `Missing Data` = total_missing,
+  Percent_Missing =percent_missing_total
+)
+
+#Both data frames have identical column names 
+names(total_row) <- names(missing_data_summary)
+
+# Bind the summary table and the total row
+missing_data_summary <- rbind(missing_data_summary, total_row)
+
+
+
+# Convert to a gtsummary table
+missing_data_summary %>%
+  gt() %>%
+  tab_header(
+    title = "Missing Data Summary for Smoking Sessation"
+  ) %>%
+  cols_label(
+    Variables = "Variables",
+    `Missing Data` = "Missing Values",
+    Percent_Missing = "Percentage Missing (%)"
+  ) %>%
+  fmt_number(
+    columns = vars(Percent_Missing),
+    decimals = 2  # Format percentage to two decimal places
+  )
+
+
+```
+
+
+
+```{r}
+
+#Create variable table dataframe with description of the Marathon Dat
+Variables_description<- data_frame(
+  Variables= c("id", "abst", "Var", "BA", "age_ps",
+               "sex_ps", "NHW","Black",        
+               "Hisp", "inc","edu",  
+               "ftcd_score", "ftcd.5.mins" ,"bdi_score_w00","cpd_ps",
+               "crv_total_pq1","hedonsum_n_pq1", "hedonsum_y_pq1", "shaps_score_pq1","otherdiag",
+               "antidepmed", "mde_curr","NMR", "Only.Menthol", "readiness"),
+  Type= c("Numeric", "Categorical", "Categorical", "Categorical","Numeric",
+          "Categorical","Categorical", "Categorical", "Categorical","Categorical",
+          "Categorical","Numeric","Categorical", "Numeric", "Numeric", "Numeric","Numeric","Numeric", "Numeric",
+          "Categorical", "Categorical","Categorical","Numeric","Categorical", "Numeric"),
+  Description= c("Participants id number",
+                 "Smoking Abstinence",
+                 "Varenicline (Pharmacotherapy)",
+                 "Behavioral Activation (Pyschotherapy)",
+                 "Age at phone interview",
+                 "Sex at interview",
+                 "Non-Hispanic White Indicator",
+                 "Black Indicator ",
+                 "Hispanic Indicator",
+                 "Income Levels (Low to High)",
+                 "Education Levels (Low to High.",
+                 "FTCD score at Baseline",
+                 "Smoking within 5 minutes of waking up ",
+                 "BDI score at baseline",
+                 "Cigarettes per day at baseline phone interview",
+                 "Cigarette reward value at baseline",
+                 "Pleasurable events scale at baseline- substitute reinforcers",
+                 "Pleasureable events scale at baseline- complementary reinforcers",
+                 "Anhedonia",
+                 "Other lifetime DSM-5 diagnosis",
+                 "Taking antidepressant medication at baseline",
+                 "Current vs. Past MDD",
+                 "Nicotine  Metabolism Cigarette User",
+                 "Exclsuive Mentholated Cigarette User",
+                 "Baseline readiness to quit smoking"
+                 )
+)
+
+
+
+# Create the table with kable and customize with kableExtra
+table_summary<- kable(Variables_description, "latex", booktabs = TRUE, caption = "Smoking Cessation Data Description") %>%
+  kable_styling(latex_options = c("striped", "scale_down")) %>%
+  column_spec(1, width = "3cm") %>%
+  column_spec(2, width = "2cm") %>%
+  column_spec(3, width = "2cm") %>%
+  column_spec(4, width = "8cm")
+
+
+table_summary
+
+
+
+```
+
+
+
+
+
+
+
+
+## Pre-processing
+The initial exploratory analysis was conducted to identify patterns and relationships among key variables. During preprocessing, it was observed that there are treatment groups in the dataset, but the paper discussed a 2 by 2  factorial design to compare behavioral activation for smoking cessation (BASC) against standard behavioral treatment (ST). The four treatment groups that we will be exploring consists of `BASC + Varenicline` `ST + Placebo`, `BASC + Placebo` and `ST + Varenicline`.Due to limited number of participants in education levels, `Grade School, Some High School, and High School` were combined to `High School or Less` to make it more balance to other education levels in the data.
+
+
+## Multiple Imputations
+`Multiple Imputation` is a statistical process in the `mice` package that handles missing data by creating several datasets that fills in missing values.In the case here, we will implement 5 imputations  for more accurate analyses by accounting for the uncertainty around the missing data, compared to single imputation methods that replace missing values with a single estimate.Each imputed dataset is then arrange into long format using the complete long function treating each as if it were the real, complete data. The statistical model we will be anticipating throughout this process is `Logistic` and `Lasso` regression. Following these results, we will examine summary statitiscs like the p-values, odd ratios, and beta estimates to examine the best potential moderators for abstinence for smokers that experience MDD.
+
+## EDA (Exploratory Data Analysis)
+To investigate the relationships between categorical variables, we utilized barplots to examine significant associations between baseline characteristics, such as income and education levels, and abstinence outcomes. This approach involves comparing observed frequencies across different categories to determine if the differences are statistically significant or likely due to chance. By assessing the independence of two categorical variables, we aim to identify patterns, relationships, and potential associations between risk factors and abstinence.
+
+Barplots were used to visually evaluate these relationships, highlighting interactions between two categorical variables. Patterns in bar heights or proportions provided insights into how one variable influences or interacts with another. Additionally, density plots were included to observe data concentration, with peaks indicating areas of high frequency. Overlaying these density plots allowed for a comparative analysis of differences in distributions, further revealing potential trends or differences in the data.
+
+
+
+## Test Train Splits on models
+In our logistic and lasso models, we will implement a test, train, split process with 70% on the trained data and 30% on the test data.  
+
+## Logistic
+The logistic regression model doesn't use a penalty term and it's objective is to model the probability of a binary outcome Pr(Y=1|X) OR Pr(Y=0|X). Logistic regression uses the MLE (Maximum Likelihood Estimate) of the observed data without imposing any regularization on the coefficients. Logistic regression finds the coefficients that best predict the outcome (abstinence in this case) based on the given predictors by maximizing the likelihood (or minimizing the negative log-likelihood).
+
+To refine the model, variables with statistical significance ($\alpha<=.05$) will be selected and observed for their summary statistics of p-values, beta coefficients, confidence intervals, and odd ratios. This step enables the identification of potential moderating factors that may influence abstinence outcomes among participants which provide insights into key predictors.
+
+
+## Lasso
+In the lasso regression model, we use the $l_1$ penalty rather than the $l_2$, where we take the absolute value of the $\beta$ rather than the squaring them. The $l_1$ penalty has the effect of forcing some of the coefficients to be exactly equal to zero. Lasso performs variable selection and models are easier to interpret that produces sparse models due to all the zeroes represented inside of the model.After observing our $\beta$ coefficients, we observe the non-zero coeffiecients in both our main effects model and interaction term model.Following the test, train , split, we will implement the process of  crossvalidation and using the respective lasso mechanics. We will pool the results using `Rubin's Rules` find the odd ratios, means,confidence intervals and other statistical attributes.Then we observe the  non-zero coefficients  to represent the predictor variables that have the most impact on our model and on the prediction of abstinence. 
+
+
+
+
+
+
+
+# Comparison Analysis (Area Under the Curve (AUC))
+Following the regression model analysis, we will evaluate and compare the performance of the logistic and LASSO regression models. This comparison aims to assess each model’s predictive accuracy, interpretability, and ability to identify significant predictors of abstinence.We'll compare models using AUC on both training and testing data to assess generalization and discrimination between abstinent and non-abstinent outcomes. Higher AUC indicates better performance.
+
+
+
+# Summary Statistics Table 
+This table provides a detailed breakdown of baseline characteristics for participants in four treatment groups: BASC + Placebo, BASC + Varenicline, ST + Placebo, and ST + Varenicline. Demographically, there is a high representation of Black participants, ranging from 45% in the BASC + Varenicline group to 59% in the ST + Placebo group. Non-Hispanic White participants make up a smaller proportion, ranging from 31% in the ST + Varenicline group to 41% in the BASC + Varenicline group. Hispanic participants account for less than 8% in all groups, with the lowest representation (4%) in BASC + Varenicline. Regarding sex, females are slightly more represented across all groups, with percentages ranging from 53% to 57%. These demographic trends highlight a study population where Black participants and females are highly represented, potentially reflecting disparities in smoking prevalence or recruitment efforts targeting underserved populations.
+
+Socioeconomic factors also provide important context for understanding the challenges these participants may face in smoking cessation. A significant proportion of participants report annual incomes below $20,000, ranging from 36% in BASC + Varenicline and ST + Varenicline to 38% in ST + Placebo. In contrast, those with incomes above $75,000 are minimally represented, accounting for only 9–16% across groups. Educational attainment reveals that a large percentage of participants (30–39%) have attended some college or technical school, while a smaller subset (25–35%) are college graduates. This socioeconomic profile indicates that the study population includes a high proportion of individuals from lower-income and mid-level educational backgrounds, groups often at higher risk for smoking persistence and less likely to access cessation resources. These demographic and socioeconomic factors are critical in interpreting treatment effects, as they may influence both baseline smoking behaviors and responsiveness to cessation interventions.
+
+
+
+```{r}
+# Load the PNG file
+table_image <- image_read("adjustedtable2.png")
+
+# Display the image in RStudio's Viewer or an external window
+print(table_image)
+
+
+```
+
+
+
+
+
+
+
+```{r}
+# define treatment categories
+project2_treatments <- project2 %>%
+  mutate(
+    treatment_groups = case_when(
+      Var == 1 & BA == 1 ~ "BASC + Varenicline",
+      Var == 0 & BA == 1 ~ "BASC + Placebo",
+      Var == 1 & BA == 0 ~ "ST + Varenicline",
+      Var == 0 & BA == 0 ~ "ST + Placebo"
+    )
+  ) 
+
+# Combine education levels 
+project2_treatments <- project2_treatments %>%
+   mutate(edu = as.character(edu))%>%
+  mutate(edu = case_when(
+    edu %in% c( "2", "3") ~ "1",
+    TRUE ~ edu  # Keep other values as they are
+  ))
+
+# recode income, education, and sex levels
+project2_treatments <- project2_treatments  %>%
+  mutate(
+    inc= case_when(
+      inc == 1 ~ "Less than $20,000",
+      inc == 2 ~ "$20,000–35,000",
+      inc == 3 ~ "$35,001–50,000",
+      inc == 4 ~ "$50,001–75,000",
+      inc == 5 ~ "More than $75,000",
+      TRUE ~ "Unknown"
+    ),
+    edu = case_when(
+      edu == 1 ~ "Some High School or Less",
+      edu == 4 ~ "Some college/technical school",
+      edu == 5 ~ "College graduate",
+      TRUE ~ "Unknown"
+    ),
+    sex_ps = case_when(
+      sex_ps == 1 ~ "Male",
+      sex_ps == 2 ~ "Female",
+      TRUE ~ "Unknown")
+  )
+
+
+
+
+```
+
+
+
+
+```{r}
+
+
+
+#Define Treatment Groups
+project2_table <- project2 %>%
+  mutate(treatment_groups = case_when(
+    Var == 1 & BA == 1 ~ "BA_VA",
+    Var == 0 & BA == 0 ~ "ST_Placebo",
+    Var == 0 & BA == 1 ~ "BA_Placebo",
+    Var == 1 & BA == 0 ~ "ST_VA"
+  ))
+
+```
+
+
+```{r}
+
+
+#Change variables into factor and continous variables 
+factor_vars <- c("abst","Var","BA","sex_ps", "NHW",
+                 "Black", "Hisp", "inc", "edu", "readiness",
+                 "ftcd.5.mins","otherdiag", "antidepmed","mde_curr",
+                 "Only.Menthol", "treatment_groups")
+
+#Mutate variables as factors
+project2_table<- project2_table%>%
+  mutate(across(all_of(factor_vars), as.factor))
+
+#Mutate variables as factors
+project2_treatments<- project2_treatments%>%
+  mutate(across(all_of(factor_vars), as.factor))
+
+
+```
+
+
+
+##Exploratory Data Analysis
+
+
+In the **Baseline Characteristics of Abstinence Status by Socioecomonic Levels** ,the stacked bar plot offers a clear visual depiction of the association between education and income levels based on abstinence status.The plot indicates that individuals with higher education levels, such as "College Graduate," appear more prevalent among the abstinent group compared to the non-abstinent group, while those with "Some High School or Less" education are more represented in the non-abstinent group. This suggests a potential positive relationship between higher education levels and the likelihood of abstinence. 
+
+The proportions of individuals in each income bracket appear relatively consistent between the abstinent and non-abstinent groups, with no clear dominance of any specific income level in either group. However, a slight trend may suggest higher proportions of abstinent individuals in middle to higher income brackets (e.g., "$35,001–$75,000"), whereas lower income categories (e.g., "Less than $20,000") appear more prominent in the non-abstinent group. Through further analysis, it would be interesting to see if income and education levels may be potential moderators for abstinence.
+
+```{r}
+# Create a stacked bar plot
+income_plot<-ggplot(project2_treatments, aes(x = abst, fill = inc)) +
+  geom_bar(position = "fill") + # Use position = "fill" for proportions
+  labs(
+    x = "Abstinence",
+    y = "Proportions",
+    fill = "Income Levels"
+  ) +
+  scale_fill_brewer(palette = "Set4") + # Apply a Brewer palette
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 14),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12),
+    legend.position = "bottom"
+  )
+
+# Create a stacked bar plot
+education_plot<-ggplot(project2_treatments, aes(x = abst, fill = edu)) +
+  geom_bar(position = "fill") + # Use position = "fill" for proportions
+  labs(
+    x = "Abstinence",
+    y = "Proportions",
+    fill = "Education Levels"
+  ) +
+  scale_fill_brewer(palette = "Set4") + # Apply a Brewer palette
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 14),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12),
+    legend.position = "bottom"
+  )
+
+
+grid.arrange(
+  education_plot, income_plot, 
+  ncol = 2,  
+  nrow = 2,
+  top= "Baseline Characteristics of Abstinence Status by Socioecomonic Levels"
+)
+
+
+
+```
+
+ 
+`Anhedonia` is the inability to feel pleasure, experience joy, or pleasure. Anhedonia is a common symtom of depression and mental health disorders. Based off the observations **Baseline Characteristics of Abstinence Status with Continous Variables** plot, the BA_Placebo group exhibit lower anhedonia scores in the abstinent group (blue) compared to non-abstinent individuals (red), with the density peaks concentrated at lower values. This is similarly reflected in the BA_VA group, where the abstinent participants also tend to have lower anhedonia scores, though the distributions for the two groups overlap more. The ST_Placebo group, a similar trend is observed, where abstinent individuals have a higher density at lower anhedonia scores, suggesting less severe anhedonia among those who are abstinent. The ST_VA group, demonstrated a consisted distribution towards lower anhedonia scores in the abstinent group compared to their non-abstinent counterparts. These  plot offers interesting insights due to the overlapping different treatment groups which contributes to lower anhedonia scores are associated with higher likelihoods of abstinence, regardless of the treatment group.
+
+
+
+
+```{r}
+
+
+# Hedonsum Complementary Rewards
+hedonsum_y_pq_plot<-ggplot(project2_table, aes(x = hedonsum_y_pq1 , fill = abst)) +
+  geom_density(alpha = 0.4) +
+  facet_wrap(~treatment_groups, scales = "free") +
+  theme_minimal() +
+  labs(
+       x = "Substitute Reinforcers",
+       y = "Density") 
+  scale_fill_manual(values = c("0" = "red", "1" = "blue"), name = "Abstinence Status")
+
+
+
+ # Nicotine Metabolism Ratio
+nmr_plot<-ggplot(project2_table, aes(x = NMR , fill = abst)) +
+  geom_density(alpha = 0.4) +
+  facet_wrap(~treatment_groups, scales = "free")+
+  theme_classic()+
+  labs(
+       x = "NMR",
+       y = "Density")
+scale_fill_manual(values = c("1" = "pink", "0" = "blue"), name = "Abstinence Status")
+
+
+# Hedonsum Substitute Reinforcers
+hedonsum_N_plot<-ggplot(project2_table, aes(x = hedonsum_n_pq1 , fill = abst)) +
+  geom_density(alpha = 0.4) +
+  facet_wrap(~treatment_groups, scales = "free")+
+  theme_classic()+
+  labs(
+       x = "Hedonsum",
+       y = "Density")
+scale_fill_manual(values = c("1" = "pink", "0" = "blue"), name = "Abstinence Status")
+
+
+
+#Age at phone interview
+age_plot<-ggplot(project2_table, aes(x =age_ps , fill = abst)) +
+  geom_density(alpha = 0.4) +
+  facet_wrap(~treatment_groups, scales = "free")+
+  theme_classic()+
+  labs(
+       x = "Age",
+       y = "Density")
+scale_fill_manual(values = c("1" = "pink", "0" = "blue"), name = "Abstinence Status")
+
+
+
+
+
+anhedonia_plot<-ggplot(project2_table, aes(x =shaps_score_pq1 , fill = abst)) +
+  geom_density(alpha = 0.4) +
+  facet_wrap(~treatment_groups, scales = "free")+
+  theme_classic()+
+  labs(title="Baseline Characteristics of Abstinence Status with Continous Variables",
+       x = "Anhedonia",
+       y = "Density")
+scale_fill_manual(values = c("1" = "pink", "0" = "blue"), name = "Abstinence Status")
+
+anhedonia_plot
+```
+
+
+For substitute reinforcers, abstinent individuals (blue) consistently exhibit a higher density at lower scores compared to non-abstinent individuals, particularly in the BA_VA and ST_VA groups. This suggests that individuals who rely less on substitute reinforcers may have a greater likelihood of abstinence, potentially due to a higher capacity for intrinsic motivation in these groups.
+
+Regarding `NMR`, there is noticeable variation across the treatment groups. In the BA_Placebo and ST_Placebo groups, abstinent individuals tend to cluster around moderate to high NMR values, indicating a potential metabolic or physiological influence on treatment efficacy. However, in the BA_VA and ST_VA groups, the distributions are more similar, suggesting that NMR may have a weaker predictive value in these settings.
+
+For `Hedonic` capacity, the BA_Placebo and ST_Placebo groups show higher densities for abstinent individuals at moderate hedonic scores, while non-abstinent participants are more evenly distributed across the range. This indicates that hedonic capacity may be a key moderator for predicting abstinence, as individuals with moderate to high capacity for experiencing pleasure may respond better to treatment.
+
+In terms of `Age`, the relationship with abstinence varies by treatment group. In the BA_Placebo group, abstinent individuals are skewed toward younger ages, while the ST_Placebo group shows a more balanced distribution. In the BA_VA and ST_VA groups, older participants appear more likely to be abstinent, suggesting age may interact with the type of intervention to influence outcomes.
+```{r}
+grid.arrange(
+  hedonsum_y_pq_plot, nmr_plot, hedonsum_N_plot, age_plot,
+  ncol = 2,  
+  nrow = 2,
+  top= "Baseline Characteristics of Abstinence Status with Continous Variables"
+)
+
+
+
+
+
+
+
+```
+
+
+
+According to **Baseline Characteristics of Abstinence Status in Racial Groups**, the proportion of abstinent individuals appears slightly lower compared to non-abstinent individuals in the `Black` group, suggesting a potential disparity in abstinence rates. For `Non-Hispanic Whites`, the proportions of abstinent and non-abstinent individuals appear relatively balanced, indicating no strong visual difference in abstinence outcomes for this group. In contrast, the Hispanic White group shows a much smaller representation of abstinent individuals compared to non-abstinent individuals, suggesting that this group may face unique barriers to achieving abstinence.
+
+These patterns highlight potential racial disparities in abstinence outcomes, with Black and Hispanic White individuals appearing less likely to achieve abstinence compared to Non-Hispanic Whites. This may be bias,because the racial groups were highly sampled in the data compared to `Non-Hispanic Whites`.
+
+
+```{r}
+# Create a stacked bar plot
+NHW_plot<-ggplot(project2_table, aes(x = abst, fill = NHW)) +
+  geom_bar(position = "fill") + # Use position = "fill" for proportions
+  facet_wrap(~treatment_groups, scales = "free")+
+  labs(
+    x = "Abstinence",
+    y = "Proportions",
+    fill = "Non-Hispanic Whites Levels"
+  ) +
+  scale_fill_brewer(palette = "Set4") + # Apply a Brewer palette
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 14),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12),
+    legend.position = "bottom"
+  )
+
+
+# Create a stacked bar plot
+Hisp_plot<-ggplot(project2_table, aes(x = abst, fill = Hisp)) +
+  geom_bar(position = "fill") + # Use position = "fill" for proportions
+  facet_wrap(~treatment_groups, scales = "free")+
+  labs(
+    x = "Abstinence",
+    y = "Proportions",
+    fill = "Hispanic Whites "
+  ) +
+  scale_fill_brewer(palette = "Set4") + # Apply a Brewer palette
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 14),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12),
+    legend.position = "bottom"
+  )
+
+
+# Create a stacked bar plot
+Black_plot<-ggplot(project2_table, aes(x = abst, fill = Black)) +
+  geom_bar(position = "fill") + # Use position = "fill" for proportions
+  facet_wrap(~treatment_groups, scales = "free")+
+  labs(
+    x = "Abstinence",
+    y = "Proportions",
+    fill = "Blacks"
+  ) +
+  scale_fill_brewer(palette = "Set4") + # Apply a Brewer palette
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 14),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12),
+    legend.position = "bottom"
+  )
+
+
+
+grid.arrange(
+  Black_plot, NHW_plot,
+  ncol = 2,  
+  nrow = 2,
+  top= "Baseline Characteristics of Abstinence Status in Racial Groups"
+)
+
+ Hisp_plot
+```
+
+
+
+
+## Correlation Plot
+According to the `Correlation to Smoking Cessation Plot`, the highest postive correlation presented is the ftcd_score with crv_total_pq1 of (.53) which may introduce multicollinearity in our regression models. The rest of the plot indicates weaker associations which are more ideal for our regression. Depression Score (bdi_score_w00) demonstrates a notable positive correlation with shaps_score_pq1 (0.39), which might indicate that higher depression levels are associated with anhedonia or reduced pleasure response (as measured by the SHAPS score).Negative correlations with several variables like age_ps and hedonsum_n_pq1 (-0.34), indicating that higher depression scores might be associated with specific clinical or psychological profiles. Anhedonia (shaps_score_pq1) offers a positive correlation with bdi_score_w00 (depression score, 0.39), highlighting an association between depressive symptoms and anhedonia. Negative correlations with abstinence-related measures (hedonsum_n_pq1, -0.26), which could indicate that anhedonia is negatively associated with behaviors linked to smoking cessation. Craving (crv_total_pq1) illustrates a moderate positive correlation with shaps_score_pq1 (0.27), potentially indicating that craving and anhedonia are related. High craving scores might represent a barrier to smoking cessation, as they indicate higher dependence and difficulty abstaining.NMR (Nicotinic Metabolism Rate) indicate aminor correlation with other variables, suggesting it may not be as directly related to the psychological measures shown here but could independently influence cessation outcomes by affecting nicotine processing and addiction levels.
+
+
+Abstinence from smoking may be more challenging for individuals with higher craving levels, depressive symptoms, and anhedonia. The strong relationships between these psychological variables indicate a potential cumulative effect, where individuals facing multiple psychological challenges might experience a higher barrier to achieving and maintaining abstinence.
+
+This matrix provides valuable insights into the psychological and demographic factors that may need to be addressed to improve smoking cessation success, highlighting the importance of targeting depressive symptoms, managing craving, and enhancing motivation in cessation interventions.
+
+
+```{r}
+# Find the variables in project2 that are not in factor_vars
+continous_vars <- setdiff(names(project2), factor_vars)
+
+project2 <- project2 %>%
+  mutate(across(all_of(continous_vars), as.numeric))
+
+# Select only numeric columns for the correlation plot
+numeric_data <- project2 %>% select(all_of(continous_vars))%>%
+dplyr::select(-c(id))
+
+
+# Calculate the correlation matrix
+cor_matrix <- cor(numeric_data, use = "complete.obs")
+
+
+# Melt the correlation matrix for ggplot2
+cor_data2 <- melt(cor_matrix)
+
+
+#Cessation Smoking correlation plot 
+cessation_smoking_plot2<-ggplot(data = cor_data2, aes(x = Var1, y = Var2, fill = value)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = round(value, 2)), color = "black", size = 4) +
+  scale_fill_gradient2(low = "hotpink", high = "royalblue", mid = "white",
+                       midpoint = 0, limit = c(-1, 1), space = "Lab",
+                       name = "Correlation") +
+  labs(title = "Correlation of Smoking Cessation",
+       x= "Variables",
+       y= "Variables") +
+  theme_minimal(base_family = "Times") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),
+        legend.position = "bottom",
+        plot.title = element_text(hjust = 0.5, size= 20))
+
+cessation_smoking_plot2
+  
+
+
+```
+# Results
+
+# Logistic Modeling
+To begin our analysis, we will observe the logistic regression model with all of the main effects on the test and trained data. The trained data represented in this logistic modeL is 70% and test data is 30%. In the first table, we notice all the significant predictors that attributes to abstinence amongst the participants in study. So far, Pharmacotherapy (Var), Non-Hispanic Whites, FTCD_score (ftcd_score), Psychotherapy (BA), and Current vs past Major Depressive Disorder (mde_curr) are statistical significant predictors in this model across various imputations.Use of pharmacotherapy, such as nicotine replacement therapy or other medications, is known to improve abstinence rates by alleviating withdrawal symptoms and reducing cravings, making it easier for participants to maintain abstinence.Research indicates that smoking cessation success rates can vary by race/ethnicity due to differences in socioeconomic factors, access to healthcare, and cultural attitudes towards smoking. In this study, Non-Hispanic White participants appear to have higher odds of achieving abstinence, potentially reflecting broader access to cessation resources or varying social support structures. This score measures tobacco dependence, with higher scores indicating greater dependence. Lower dependence is generally associated with better cessation outcomes, as individuals with higher dependence often face greater challenges with withdrawal and cravings, reducing their likelihood of achieving abstinence.Behavioral therapy is a common intervention to support smoking cessation, helping participants develop coping mechanisms to resist cravings and manage triggers. Its significance in this model suggests that psychotherapy is an effective tool in aiding participants to achieve and maintain abstinence.Depression is a critical factor in smoking cessation, as those with current depressive symptoms may struggle more with abstinence due to nicotine’s role as a mood stabilizer. Participants with active depressive symptoms often face additional challenges in quitting, which may explain the negative association with abstinence.
+
+
+
+Several key variables emerge as potential moderators for abstinence, influencing how other factors or interventions impact cessation outcomes. One significant moderator is the **Nicotine Metabolite Ratio (NMR)**, which reflects an individual's metabolic capacity to process nicotine. With an odds ratio of 2.453 (95% CI: 1.187–5.046), higher NMR values are associated with increased odds of abstinence. This suggests that NMR could moderate the effectiveness of pharmacological treatments, such as nicotine replacement therapy, as faster metabolizers may require higher doses or alternative strategies to achieve success.
+
+Another critical factor is **readiness to quit**. Individuals with lower readiness to quit (readiness9) have drastically reduced odds of abstinence, with an odds ratio of 0.038 (95% CI: 0.001–0.878). Readiness may moderate the relationship between treatment intensity and outcomes, where higher readiness levels may enhance the effectiveness of behavioral interventions, while lower readiness levels might necessitate motivational enhancement strategies. Similarly, **race/ethnicity** plays a significant role, with Non-Hispanic White (NHW1) individuals showing an odds ratio of 5.82 (95% CI: 2.497–14.597), indicating much higher odds of abstinence compared to other racial/ethnic groups. Race could moderate the impact of socioeconomic factors, such as income and access to culturally tailored healthcare resources, which may affect treatment outcomes.
+
+Other moderators include **menthol use** and **cigarettes per day (cpd_ps)**. Individuals who exclusively smoke menthol products have 116.9% higher odds of abstinence (odds ratio: 2.169, 95% CI: 1.335–3.565), potentially reflecting unique behavioral or physiological patterns in menthol smokers. This could moderate the effectiveness of treatment modalities, as menthol smokers may respond differently to pharmacological or behavioral interventions. On the other hand, higher cigarette consumption significantly reduces abstinence odds, with an odds ratio of 0.921 (95% CI: 0.884–0.959). Cigarette consumption may moderate the relationship between treatment type and cessation outcomes, where heavier smokers likely require more intensive or combined therapy approaches.
+
+Socioeconomic factors, such as **income level (inc2)**, also show a significant moderating effect. Individuals in lower income brackets are 50.9% less likely to achieve abstinence (odds ratio: 0.491, 95% CI: 0.274–0.861), indicating that affordability and accessibility of resources could moderate cessation success. **Age (age_ps)** is another important moderator, with older individuals showing higher odds of abstinence (odds ratio: 1.034, 95% CI: 1.013–1.056, p-value:0.00111). Age may moderate the effectiveness of interventions, as younger individuals might require different or more intensive strategies compared to older adults, who may be more motivated by health concerns or long-term smoking behavior patterns.
+
+In summary, variables such as **NMR**, **readiness to quit**, **race/ethnicity**, **menthol use**, **cigarettes per day**, **income level**, and **age** are critical moderators that influence the effectiveness of treatments and the likelihood of abstinence. Understanding and addressing these moderators can guide tailored, individualized interventions, ultimately improving cessation outcomes for diverse populations.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+
+set.seed(222)
+
+#project2_table<- project2_table%>%
+  #dplyr::select(-id,)
+  
+trainIndex <- createDataPartition(project2_table$abst, p = 0.7, list = FALSE)
+  train_data <- project2_table[trainIndex, ]
+  test_data <- project2_table[-trainIndex, ]
+  
+
+
+# Data Imputation for Logistic Modeling
+
+imputed_data <- mice(train_data, m = 5, method = 'pmm', maxit = 10, seed = 222, print=FALSE)
+stacked_data_primary <- complete(imputed_data, action = "long", include = FALSE)
+stacked_data_primary<-stacked_data_primary%>%
+  dplyr::select(-.id, -.imp)
+
+# Fit the logistic regression model with 
+main_effects <- glm(abst ~ ., family = binomial(link = "logit"), data = stacked_data_primary)
+
+# Fit the logistic model with interaction terms on Training Data
+  interaction_effects <- glm(abst ~ Var + BA + age_ps + sex_ps + NHW + Black + Hisp +
+                             inc + edu + ftcd_score + ftcd.5.mins + bdi_score_w00 + cpd_ps +
+                             crv_total_pq1 + hedonsum_n_pq1 + hedonsum_y_pq1 + shaps_score_pq1 +
+                             otherdiag + antidepmed + mde_curr + NMR + Only.Menthol + readiness +
+                             sex_ps * Black + sex_ps * NHW + Black * Only.Menthol+ Hisp * 
+                             Only.Menthol +NHW * edu  +  Black * edu ,
+                             family =binomial(link = "logit"), data=stacked_data_primary)
+  
+
+#Make table for Main Effects
+data_frame2<- round(summary(main_effects)$coefficients,5)
+
+# Make into dataframs
+data_frame2<-as.data.frame(data_frame2)
+
+# Convert row names to a column in the dataframe
+data_frame2$Variable <- rownames(data_frame2)
+
+# Rearrange the columns to make "Variable" the first column
+data_frame2 <- data_frame2[, c("Variable", colnames(data_frame2)[-ncol(data_frame2)])]
+
+# Compute odds ratios
+odds_ratios <- exp(coef(main_effects, na.rm=TRUE))
+
+# Make odd ratios into dataframe
+yea<-as.data.frame(odds_ratios)
+
+# Create row names for odd ratios
+yea$Variable<- rownames(yea)
+
+# Rearrange the columns to make "Variable" the first column
+yea <- yea[, c("Variable", colnames(yea)[-ncol(yea)])]
+
+#Removes NAs in odd ratios
+yea<- yea[!is.na(yea$odds_ratios), ]
+
+
+# Compute confidence intervals for the coefficients
+conf_intervals <- exp(confint(main_effects))
+
+# Make confidence intervals into a dataframe
+conf_intervals_<-as.data.frame(conf_intervals)
+
+# A
+conf_intervals_$Variable<- rownames(conf_intervals_)
+# Rearrange the columns to make "Variable" the first column
+ conf_intervals_<- conf_intervals_[, c("Variable", colnames(conf_intervals_)[-ncol(conf_intervals_)])]
+ # Remove rows where treatment_groups are "ST_Placebo" or "ST_VA"
+ conf_intervals_ <-  conf_intervals_[!(conf_intervals_$Variable %in% c("treatment_groupsST_Placebo", "treatment_groupsST_VA")), ]
+
+
+combined_df <- merge(merge(data_frame2, yea, by = "Variable"), conf_intervals_, by = "Variable")
+
+combined_df<-combined_df%>%
+  group_by(Variable)%>%
+  filter(`Pr(>|z|)` < 0.05) %>%
+  rename(`Lower Conf.` = `2.5 %`,
+         `Upper Conf.`= `97.5 %`,
+         `Pvalue`= `Pr(>|z|)`)
+combined_df<- combined_df[!(combined_df$Variable %in% c("id")), ]
+
+
+combined_df %>%
+  kbl(caption = "Logistic Model:Significant Predictor Variables for Training Data",
+      booktabs = TRUE, escape = FALSE, align = "c") %>%
+  kable_styling(full_width = FALSE, latex_options = c('hold_position'))
+
+
+
+
+
+
+```
+
+```{r}
+#Make table for Main Effects
+data_frame3<- round(summary(interaction_effects)$coefficients,5)
+
+# Make into dataframs
+data_frame3<-as.data.frame(data_frame3)
+
+# Convert row names to a column in the dataframe
+data_frame3$Variable <- rownames(data_frame3)
+
+# Rearrange the columns to make "Variable" the first column
+data_frame3<- data_frame3[, c("Variable", colnames(data_frame2)[-ncol(data_frame3)])]
+
+# Compute odds ratios
+odds_ratios2 <- exp(coef(interaction_effects, na.rm=TRUE))
+
+# Make odd ratios into dataframe
+yea1<-as.data.frame(odds_ratios2)
+
+# Create row names for odd ratios
+yea1$Variable<- rownames(yea1)
+
+# Rearrange the columns to make "Variable" the first column
+yea1 <- yea1[, c("Variable", colnames(yea1)[-ncol(yea1)])]
+
+#Removes NAs in odd ratios
+yea1<- yea1[!is.na(yea1$odds_ratios), ]
+
+
+# Compute confidence intervals for the coefficients
+conf_intervals2<- exp(confint(interaction_effects))
+
+# Make confidence intervals into a dataframe
+conf_intervals_2<-as.data.frame(conf_intervals2)
+
+
+conf_intervals_2$Variable<- rownames(conf_intervals_2)
+# Rearrange the columns to make "Variable" the first column
+ conf_intervals_2<- conf_intervals_2[, c("Variable", colnames(conf_intervals_2)[-ncol(conf_intervals_2)])]
+ # Remove rows where treatment_groups are "ST_Placebo" or "ST_VA"
+ conf_intervals_2 <-  conf_intervals_2[!(conf_intervals_2$Variable %in% c("NHW1:edu5", "Black1:edu2", "Black1:edu5")), ]
+
+
+combined_df2<- merge(merge(data_frame2, yea, by = "Variable"), conf_intervals_, by = "Variable")
+
+combined_df2 <- combined_df2 %>%
+  group_by(Variable) %>%
+  filter(`Pr(>|z|)` < 0.05) %>%
+  rename(`Lower Conf.` = `2.5 %`,
+         `Upper Conf.`= `97.5 %`,
+         `Pvalue`= `Pr(>|z|)`)
+combined_df2<- combined_df2[!(combined_df2$Variable %in% c("id")), ]
+
+
+combined_df2 %>%
+  kbl(caption = "Logistic Model:Significant Predictor Variables for Training Data with Interaction Terms",
+      booktabs = TRUE, escape = FALSE, align = "c") %>%
+  kable_styling(full_width = FALSE, latex_options = c('hold_position'))
+
+
+```
+
+```{r}
+# Predict probabilities on test data
+predicted_probs <- predict(main_effects, newdata = test_data, type = "response")
+predict_probs_2<- predict(main_effects, newdata = stacked_data_primary, type = "response")
+predicted_probs3 <- predict(interaction_effects, newdata = test_data, type = "response")
+predict_probs_4<- predict(interaction_effects, newdata = stacked_data_primary, type = "response")
+
+
+
+# Calculate ROC 
+roc_curve <- roc(test_data$abst, predicted_probs)
+roc_curve2<- roc(stacked_data_primary$abst, predict_probs_2)
+roc_curve3 <- roc(test_data$abst, predicted_probs3)
+roc_curve4<- roc(stacked_data_primary$abst, predict_probs_4)
+
+
+#Calculate AUC
+auc_value <- auc(roc_curve)
+auc_value2<-auc(roc_curve2)
+auc_value3 <- auc(roc_curve3)
+auc_value4<-auc(roc_curve4)
+
+
+
+
+
+
+plot(roc_curve, col = "red", lty = 2, main = "ROC Curve for Logistic Regression Model", lwd = 2)
+lines(roc_curve2, col = "blue", lty = 1, lwd = 2)  # Main Effects Training
+lines(roc_curve3, col = "red", lty = 4, lwd = 2)  # Interaction Effects Test
+lines(roc_curve4, col = "blue", lty = 3, lwd = 2)  # Interaction Effects Training
+
+# Add a legend
+legend("bottomright", 
+       legend = c(
+         paste("Test (Main Effects), AUC =", round(auc_value, 3)),
+         paste("Train (Main Effects), AUC =", round(auc_value2, 3)),
+         paste("Test (Interaction Effects), AUC =", round(auc_value3, 3)),
+         paste("Train (Interaction Effects), AUC =", round(auc_value4, 3))
+       ), 
+       col = c("red", "blue", "red", "blue"), 
+       lty = c(2, 1, 4, 3), 
+       lwd = 2)
+
+
+
+
+ 
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Data Imputation
+imputed_data1 <- mice(project2_table, m = 5, method = 'pmm', maxit = 10, seed = 222, print = FALSE)
+
+# Ensure abst is binary for ROC and logistic regression
+project2_table$abst <- as.factor(project2_table$abst)
+
+# Cross-validation partition
+trainIndex1 <- createDataPartition(project2_table$abst, p = 0.7, list = FALSE)
+
+# Iteration over imputed datasets
+for (i in 1:5) {
+  complete_data_ <- complete(imputed_data1, i)
+  train_data1 <- complete_data_[trainIndex1, ]
+  test_data1 <- complete_data_[-trainIndex1, ]
+  
+  # Fit logistic models
+  main_effects <- glm(abst ~ ., family = binomial(link = "logit"), data = train_data1)
+  
+  # Check if ROC/AUC functions work
+  train_data1$predicted_probs_main_train <- predict(main_effects, newdata = train_data1, type = "response")
+  roc_train_main <- roc(train_data1$abst, train_data1$predicted_probs_main_train)
+  print(roc_train_main)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Load necessary libraries
+
+project2_table$abst <- as.numeric(as.character(project2_table$abst))
+project2_table$edu <- factor(project2_table$edu, levels = c("1", "2", "3", "4", "5"))
+project2_table$ftcd_score <- as.numeric(as.character(project2_table$ftcd_score))
+project2_table$cpd_ps <- as.numeric(as.character(project2_table$cpd_ps))
+project2_table$readiness <- as.numeric(project2_table$readiness)
+
+
+# Data Imputation for Logistic Modeling
+imputed_data1 <- mice(project2_table, m = 5, method = 'pmm', maxit = 10, seed = 222, print = FALSE)
+
+# Initialize lists to store model results, significant coefficients, and AUC values
+model_results <- list()
+significant_coef_estimates <- list()
+auc_train_main <- list()
+auc_test_main <- list()
+
+# Loop over each imputed dataset
+for (i in 1:5) { # Assuming 'm' is the number of imputations
+  # Get a complete dataset from the imputed data
+  complete_data_ <- complete(imputed_data1, i)
+  
+  # Split into training and testing sets
+  trainIndex1 <- createDataPartition(complete_data_$abst, p = 0.7, list = FALSE)
+  train_data1 <- complete_data_[trainIndex1, ]
+  test_data1 <- complete_data_[-trainIndex1, ]
+  
+  # Fit the logistic model on training data (Main Effects)
+  main_effects <- glm(abst ~ ., family = binomial(link = "logit"), data = train_data1)
+  
+  # Store the model results
+  model_results[[i]] <- main_effects
+  
+  # Get significant coefficients
+  significant_coef <- summary(main_effects)$coefficients
+  significant_coef_estimates[[i]] <- significant_coef[significant_coef[, 4] < 0.05, ] # p-value < 0.05
+  
+  # Predict on Training Data
+  pred_train <- predict(main_effects, type = "response", newdata = train_data1)
+  roc_train <- roc(train_data1$abst, pred_train)
+  auc_train_main[[i]] <- auc(roc_train)
+  
+  # Predict on Test Data
+  pred_test <- predict(main_effects, type = "response", newdata = test_data1)
+  roc_test <- roc(test_data1$abst, pred_test)
+  auc_test_main[[i]] <- auc(roc_test)
+}
+
+# Print Average AUC for Training and Testing across Imputations
+avg_auc_train <- mean(unlist(auc_train_main))
+avg_auc_test <- mean(unlist(auc_test_main))
+cat("Average AUC on Training Data:", avg_auc_train, "\n")
+cat("Average AUC on Test Data:", avg_auc_test, "\n")
+
+# Inspect significant coefficients
+cat("Significant Coefficients Across Imputed Models:\n")
+print(significant_coef_estimates)
+
+
+str(project2_table)
+
+
+
+## Area Under Curve
+These ROC (Receiver Operating Characteristic) curves evaluate the performance of logistic models across five imputations, comparing training and test datasets for models with main effects and interaction effects. The ROC curves illustrate the trade-off between sensitivity (true positive rate) and specificity (false positive rate) for each model.
+
+Across all imputations, the test data generally achieves higher AUC (Area Under the Curve) values than the training data, indicating better predictive accuracy on the test set. The AUC values for the main effects model on the test data range from 0.901 to 0.935, while the interaction effects model on the test data achieves AUCs between 0.905 and 0.929. These high AUC values (close to 1) suggest excellent model performance, with both main and interaction effects contributing to accurate predictions.
+
+The consistent performance across imputations and the higher AUC on test data imply that the model is not overfitted to the training data and generalizes well to new data. The inclusion of interaction effects appears to slightly enhance model performance, as seen in the slightly higher AUCs for test data with interactions. Overall, these ROC curves demonstrate robust model predictability and the importance of considering both main and interaction effects for a comprehensive understanding of smoking abstinence predictors.
+
+
+## Logistic Regression Significant Predictor Variables for Training Data
+
+# Combine all data frames into a single data frame
+combined_results <- bind_rows(model_results)
+
+
+# Filter only the significant coefficients (p-value < 0.05)
+significant_logistic_results <- combined_results %>%
+  filter(p.value < 0.05)
+
+# Display results in a kable table
+significant_res <- kable(significant_logistic_results, 
+                                  caption = "Logistic Model Results (Statistically Significant Coefficients Across Imputations)") %>%
+  kable_styling(full_width = F, font_size = 12)
+
+significant_res
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Lasso Modeling
+```{r, warning=FALSE, message=FALSE}
+ # Define the formula for Lasso
+formula <- abst ~ .  # This includes all variables in the dataset for prediction
+
+# Set up parameters
+set.seed(1)
+m <- 5
+lasso_coef_estimates <- list()
+lasso_optimal_lambdas <- list()
+lasso_train_predictions <- list()
+lasso_test_predictions <- list()
+roc_list <- list()  # To store ROC plots
+
+
+# Impute missing data
+imputed_data1 <- mice(project2, m = m, method = 'pmm', maxit = 10, seed = 222, print= FALSE)
+
+# Set up train-test split 
+trainIndex <- createDataPartition(complete(imputed_data1, 1)$abst, p = 0.7, list = FALSE)
+
+# Loop over each imputed dataset
+for (i in 1:m) {
+  completed_data <- complete(imputed_data1, i)
+  
+  # Split data
+  train_data <- completed_data[trainIndex, ]
+  test_data <- completed_data[-trainIndex, ]
+  
+  # Model matrix for training and test sets
+  X_train <- model.matrix(formula, data = train_data)[, -1]  # Remove intercept column
+  Y_train <- train_data$abst
+  X_test <- model.matrix(formula, data = test_data)[, -1]  # Remove intercept column
+  Y_test <- test_data$abst
+  
+  # Fit Lasso model with cross-validation on training data
+  cv_fit <- cv.glmnet(X_train, Y_train, alpha = 1, family = "binomial")
+  
+  # Store coefficients
+  lasso_coef_estimates[[i]] <- coef(cv_fit, s = "lambda.min")
+  
+  # Store optimal lambda for reference
+  lasso_optimal_lambdas[[i]] <- cv_fit$lambda.min
+  
+  # Predict on both train and test sets using the optimal lambda
+  lasso_train_predictions[[i]] <- predict(cv_fit, newx = X_train, s = "lambda.min", type = "response")
+  lasso_test_predictions[[i]] <- predict(cv_fit, newx = X_test, s = "lambda.min", type = "response")
+  
+  # Calculate ROC and AUC for training and test data
+  roc_train <- roc(Y_train, as.numeric(lasso_train_predictions[[i]]))
+  auc_train <- auc(roc_train)
+  
+  roc_test <- roc(Y_test, as.numeric(lasso_test_predictions[[i]]))
+  auc_test <- auc(roc_test)
+  
+ # Create ROC plot for both training and test data
+  p <- ggplot() +
+    geom_line(aes(x = roc_train$specificities, y = roc_train$sensitivities), color = "blue") +
+    geom_line(aes(x = roc_test$specificities, y = roc_test$sensitivities), color = "red") +
+    geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "gray") +  # Add diagonal reference line
+    labs(title = paste("ROC Curves for Imputation", i),
+         x = "1 - Specificity",
+         y = "Sensitivity") +
+    theme_minimal() +
+    theme(plot.title = element_text(hjust = 0.5, size = 10)) +  # Smaller title size
+    scale_x_reverse() +
+    # Add AUC to the legend
+    annotate("text", x = 0.3, y = 0.2, label = paste(
+      "Train AUC =", round(auc_train, 3), "\nTest AUC =", round(auc_test, 3)), 
+      color = "black", size = 2, hjust = 0)
+ 
+  # Add plot to list
+  roc_list[[i]] <- p
+}
+
+# Arrange all ROC plots in a grid layout
+grid.arrange(grobs = roc_list, ncol = 2)
+
+# Create a data frame to store pooled results for Lasso
+lasso_pooled_results <- data.frame(Variable = rownames(lasso_coef_estimates[[1]]), 
+                                   Mean = NA, SE = NA)
+
+# Calculate the mean and standard error for each coefficient
+for (var in lasso_pooled_results$Variable) {
+  coefs <- sapply(lasso_coef_estimates, function(x) as.numeric(x[var, 1]))
+  
+  # Mean of the coefficients across imputations
+  lasso_pooled_results[lasso_pooled_results$Variable == var, "Mean"] <- mean(coefs, na.rm = TRUE)
+  
+  # Rubin's Rules for standard error calculation
+  se_within <- sqrt(mean((coefs - mean(coefs, na.rm = TRUE))^2))
+  se_between <- var(coefs, na.rm = TRUE)
+  pooled_se <- sqrt(se_within + (1 + 1/m) * se_between)
+  
+  lasso_pooled_results[lasso_pooled_results$Variable == var, "SE"] <- pooled_se
+}
+
+# Filter for non-zero mean coefficients
+lasso_selected_vars <- lasso_pooled_results[lasso_pooled_results$Mean != 0 & 
+                                              lasso_pooled_results$Variable != "(Intercept)", ]
+lasso_selected_sorted <- lasso_selected_vars[order(-abs(lasso_selected_vars$Mean)), ]
+
+# Create a table using kable for Lasso results
+kable_lasso_model_table<- kable(lasso_selected_sorted, caption = "Lasso Model Selected Variables (Non-Zero Coefficients)") %>%
+  kable_styling(full_width = F, font_size = 12)
+
+kable_lasso_model_table
+
+
+
+
+
+
+```
+
+
+The ROC curves for the five imputations illustrate the performance of the Lasso model on training (blue) and testing (red) sets, with AUC values provided for each. Across all imputations, training AUC values are consistently higher (around 0.78–0.79), indicating strong model performance on the training data. However, the test AUC values are lower (ranging from 0.674 to 0.689), suggesting a decrease in model performance when applied to new data, potentially indicating slight overfitting. In Table 8, the Lasso model selected specific variables with non-zero coefficients, such as NMR, ftcd_score, shaps_score_pq1, and crv_total_pq1, indicating these variables are significant predictors in the model. The positive and negative coefficients represent the direction of association with the outcome. For instance, NMR (nicotine metabolism rate) has a positive coefficient, indicating a higher metabolism rate might increase the likelihood of the outcome, while ftcd_score (a nicotine dependence measure) has a negative coefficient, suggesting higher dependence might be associated with a lower probability of the desired outcome. Overall, the selected variables highlight the key factors affecting smoking cessation, with the model capturing significant relationships despite some generalization issues indicated by the test AUC values.
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r,}
+# Define the formula for Lasso
+formula2 <- abst ~ .^2  # This includes all variables in the dataset for prediction
+
+# Set up parameters
+set.seed(222)
+m <- 5
+lasso_coef_estimates2 <- list()
+lasso_optimal_lambdas2 <- list()
+lasso_train_predictions2 <- list()
+lasso_test_predictions2 <- list()
+roc_list2 <- list()  # To store ROC plots
+
+
+
+# Impute missing data
+imputed_data2 <- mice(project2, m = m, method = 'pmm', maxit = 10, seed = 222, print= FALSE)
+
+# Set up train-test split 
+trainIndex2 <- createDataPartition(complete(imputed_data2, 1)$abst, p = 0.7, list = FALSE)
+
+# Loop over each imputed dataset
+for (i in 1:m) {
+  completed_data2<- complete(imputed_data2, i)
+  
+  # Split data
+  train_data2 <- completed_data2[trainIndex2, ]
+  test_data2 <- completed_data2[-trainIndex2, ]
+  
+  # Model matrix for training and test sets
+  X_train2 <- model.matrix(formula2, data = train_data2)[, -1]  # Remove intercept column
+  Y_train2 <- train_data2$abst
+  X_test2 <- model.matrix(formula2, data = test_data2)[, -1]  # Remove intercept column
+  Y_test2 <- test_data2$abst
+  
+  # Fit Lasso model with cross-validation on training data
+  cv_fit2 <- cv.glmnet(X_train2, Y_train2, alpha = 1, family = "binomial")
+  
+  # Store coefficients
+  lasso_coef_estimates2[[i]] <- coef(cv_fit2, s = "lambda.min")
+  
+  # Store optimal lambda for reference
+  lasso_optimal_lambdas2[[i]] <- cv_fit2$lambda.min
+  
+  # Predict on both train and test sets using the optimal lambda
+  lasso_train_predictions2[[i]] <- predict(cv_fit2, newx = X_train2, s = "lambda.min", type = "response")
+  lasso_test_predictions2[[i]] <- predict(cv_fit2, newx = X_test2, s = "lambda.min", type = "response")
+  
+  # Calculate ROC and AUC for training and test data
+  roc_train2 <- roc(Y_train2, as.numeric(lasso_train_predictions2[[i]]))
+  auc_train2 <- auc(roc_train2)
+  
+  roc_test2 <- roc(Y_test2, as.numeric(lasso_test_predictions2[[i]]))
+  auc_test2 <- auc(roc_test2)
+  
+ # Create ROC plot for both training and test data
+  p <- ggplot() +
+    geom_line(aes(x = roc_train2$specificities, y = roc_train2$sensitivities), color = "blue") +
+    geom_line(aes(x = roc_test2$specificities, y = roc_test2$sensitivities), color = "red") +
+    geom_abline(intercept = -2, slope = 1, linetype = "dashed", color = "gray") +  # Add diagonal reference line
+    labs(title = paste("ROC Curves for Imputation", i),
+         x = "1 - Specificity",
+         y = "Sensitivity") +
+    theme_minimal() +
+    theme(plot.title = element_text(hjust = 0.5, size = 10)) +  # Smaller title size
+    scale_x_reverse() +
+    # Add AUC to the legend
+    annotate("text", x = 0.3, y = 0.2, label = paste(
+      "Train AUC =", round(auc_train2, 3), "\nTest AUC =", round(auc_test2, 3)), 
+      color = "black", size = 2, hjust = 0)
+ 
+  # Add plot to list
+  roc_list2[[i]] <- p
+}
+
+# Arrange all ROC plots in a grid layout
+grid.arrange(grobs = roc_list2, ncol = 2)
+
+# Create a data frame to store pooled results for Lasso
+lasso_pooled_results2 <- data.frame(Variable = rownames(lasso_coef_estimates2[[1]]), 
+                                   Mean = NA, SE = NA)
+
+# Calculate the mean and standard error for each coefficient
+for (var in lasso_pooled_results2$Variable) {
+  coefs2 <- sapply(lasso_coef_estimates2, function(x) as.numeric(x[var, 1]))
+  
+  # Mean of the coefficients across imputations
+  lasso_pooled_results2[lasso_pooled_results2$Variable == var, "Mean"] <- mean(coefs2, na.rm = TRUE)
+  
+  # Rubin's Rules for standard error calculation
+  se_within2 <- sqrt(mean((coefs2 - mean(coefs2, na.rm = TRUE))^2))
+  se_between2 <- var(coefs2, na.rm = TRUE)
+  pooled_se2 <- sqrt(se_within2 + (1 + 1/m) * se_between2)
+  
+  lasso_pooled_results2[lasso_pooled_results2$Variable == var, "SE"] <- pooled_se2
+}
+
+# Filter for non-zero mean coefficients
+lasso_selected_vars2 <- lasso_pooled_results2[lasso_pooled_results2$Mean != 0 & 
+                                              lasso_pooled_results2$Variable != "(Intercept)", ]
+lasso_selected_sorted2 <- lasso_selected_vars2[order(-abs(lasso_selected_vars2$Mean)), ]
+
+# Create a table using kable for Lasso results
+kable_lasso_model_table2<- kable(lasso_selected_sorted2, caption = "Lasso Model Selected Variables with Interaction Terms (Non-Zero Coefficients)") %>%
+  kable_styling(full_width = F, font_size = 12)
+
+kable_lasso_model_table2
+
+
+
+```
+## Interaction Terms Lasso Model
+The Lasso model presented in this table highlights selected variables with interaction terms that have non-zero coefficients, indicating their potential relevance in predicting outcomes related to smoking cessation. Interaction terms, such as ftcd_score:readiness and hedonsum_n_pq1:NMR, capture the combined effects of these variables, providing deeper insights into how certain factors jointly influence smoking cessation. For instance, the interaction between ftcd_score (a nicotine dependence measure) and readiness to quit may suggest that the impact of nicotine dependence varies depending on an individual's motivation level. Similarly, the hedonsum_n_pq1:NMR interaction indicates that pleasure-seeking behaviors may relate differently to nicotine metabolism rates, potentially affecting cessation success. Including these interactions allows for a nuanced understanding of complex relationships, emphasizing that the effect of one variable can depend on the levels of another. 
+
+
+
+## Comparative Analysis 
+
+In comparing logistic regression models to Lasso (Least Absolute Shrinkage and Selection Operator) models, we find distinct advantages in each approach regarding predictor selection and model performance. Logistic regression models, especially those with main and interaction effects, provide insights into significant predictors with interpretable coefficients, making it easier to understand the direct impact of variables on smoking cessation. However, logistic models can be sensitive to multicollinearity and may include non-contributing predictors.
+
+Lasso models, on the other hand, are effective at handling multicollinearity and automatically selecting the most relevant predictors by applying a penalty to reduce less important coefficients to zero. This feature makes Lasso ideal for variable selection, often resulting in a more parsimonious model focused on predictors with the strongest associations to the outcome. If the Lasso model excludes non-contributing or weak predictors that logistic regression retained, this indicates Lasso’s utility in identifying the most critical predictors for smoking cessation.
+
+
+
+
+# Limitations
+The study was conducted in a research clinic at Northwestern University (Chicago, Illinois) and University of Pennsylvania (Philadelphia, Pennsylvania). While the study mentions that the overal therapist competence was rated very good, but it may raise potential concerns because of the therapist level of education. The students from University of Pennsylvania has their Bachelor's degree while  Northwestern University students has their Master's. This a potential limitation because the quality of education, knowledge, and expertise may be compromise which will influence results.
+
+In logistic regression, models are sensitive to multicollinearity, which occurs when predictor variables are highly correlated. Introducing interaction terms to capture the combined effects of risk factors can amplify this issue, as seen in some of our results. The appearance of high multicollinearity in certain tables may indicate overfitting, where the model captures noise instead of meaningful patterns. Overfitting not only complicates interpretation but also undermines the model’s generalizability to new data. Addressing multicollinearity and considering techniques like regularization may help to mitigate these risks and improve the model’s reliability.
+
+For small sample sizes, logistic regression may outperform lasso because lasso can be prone to overfitting with limited data. Lasso's feature selection might end up removing too many predictors, reducing the model’s ability to generalize well. In the case here, we have 300 participants in this dataset which is a indication of a small sample which causes the logistic to outperform lasso. logistic regression uses all available information, which can be an advantage when data is scarce.Lastly, predictors in logistic are highly correlated and need to be considered together which can impact the multicollinearity.
+
+Logistic regression are sensitive to multicollimearity and most of the interact terms are highly correlated. This complicates things and causes overfitting.Lasso regressions uses a penalty term which  implements more constraints. Because of it's constraints, we can observe the non-zero $\beta$ coefficents to and identify predictor variables for model selection. In the case of our best model, Pharmacotherapy (Var), Nicotine Metabolism Ratio (NMR), Current vs past current (mde_curr), Non-Hispanic Whites (NHW), Sex at phone interview (sex_ps), FTCD_score(ftcd_score),baseline readiness to quit smoking (readiness), and cigarette reward value at baseline(crv_total_pq1) are good predictors of abstinence amongst tobacco dependent individuals.
+
+ 
+
+# Conclusion
+
+In conclusion,  the logistic performed better according to the area under the curve models due to it's target estimates of AUC being closer to 1. In the lasso models, the AUC are more moderate compare.When predictors are highly correlated, Lasso may arbitrarily select one variable from a correlated set and set others to zero, potentially missing relevant information and leading to suboptimal performance. In the case here, the Chi Squared demonstrated highly correlated interaction terms which impacted the way the logistic reacted. Lasso remove those correlated variable and keep the one's that are more important as a nonzero. Logistic regression keeps all correlated variables, which can sometimes capture the overall signal better when correlations are essential to the model's interpretation. The significant variables for logistic models are Non-Hispanic White (NHW), Pharmacotherapy (Var), FTCD_score, and Current vs Past MDD.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\newpage
+# References 
+Hitsman B, Papandonatos GD, Gollan JK, Huffman MD, Niaura R, Mohr DC, Veluz-Wilkins AK, Lubitz SF, Hole A, Leone FT, Khan SS, Fox EN, Bauer AM, Wileyto EP, Bastian J, Schnoll RA. Efficacy and safety of combination behavioral activation for smoking cessation and varenicline for treating tobacco dependence among individuals with current or past major depressive disorder: A 2×2 factorial, randomized, placebo-controlled trial. Addiction. 2023 Sep;118(9):1710-1725. doi: 10.1111/add.16209. Epub 2023 May 3. Erratum in: Addiction. 2024 Sep;119(9):1669. doi: 10.1111/add.16609. PMID: 37069490.
+
+
+
+
+
+
+
+
+# Code Appendix
+
+```{r ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE}
+```
