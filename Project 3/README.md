@@ -1,15 +1,12 @@
-Constrained Budget Simulation Model Project
+# Constrained Budget Simulation Model Project
 
 Cluster randomized trials are randomized controlled trials where individuals are randomly assigned into groups called clusters. This paper presents a collaborative effort with Dr. Zhijin Wu from the Biostatistics Department at Brown University to address a fundamental challenge in experimental design: how to allocate resources optimally under budget constraints to maximize the precision of treatment effect estimation.We will consider a cluster randomized trial in which we will assign observations to either the control or treatment group and our goal is to estimate the treatment effect on an outcome variable Y.
 
-The focus of this study is to design a simulation study to investigate optimal experimental design strategies for cluster randomized trials under budget constraints. The aims for this project consists of: designing a simulation study using the ADEMP framework from class to evaluate potential study designs, explore relationships between the underlying data generation mechanism parameters and the relative costs c_2 /c_1 and how these impact the optimal study design,extending my simulation study to the setting in which Y follows a Poisson distribution with mean 
-μ
-i
-\ and explore how this impacts the results.
+The focus of this study is to design a simulation study to investigate optimal experimental design strategies for cluster randomized trials under budget constraints. The aims for this project consists of: designing a simulation study using the ADEMP framework from class to evaluate potential study designs, explore relationships between the underlying data generation mechanism parameters and the relative costs c_2 /c_1 and how these impact the optimal study design,extending my simulation study to the setting in which Y follows a Poisson distribution with mean \μi\ and explore how this impacts the results.
 
 In conclusion, the simulation model study effectively demonstrated the intricate trade-offs inherent in optimizing study design under budgetary constraints while balancing statistical performance measures such as variance, cost-efficiency, and intra-class correlation coefficients (ICC).
 
-Dependencies
+# Dependencies
 
 The R version and poackages used in this project are indicated below: R version 4.2.3 (2023-03-15)
 
