@@ -1,3 +1,5 @@
+# Introduction
+
 I am Diahmin Hawkins, a passionate and detail-oriented scholar with a strong foundation in mathematics, statistics, and biostatistics. I earned my Bachelor of Science in Mathematics from Tennessee State University, graduating Magna Cum Laude as a Department of Homeland Security Scholar. Following this, I pursued a Post-Baccalaureate program in Statistics at Columbia University, where I was honored as a Bridge to Ph.D. Scholar. Currently, I am advancing my expertise as a Master’s student in Biostatistics at Brown University, supported by the prestigious NextGen Scholarship and NSF Fellowship.
 
 Throughout my academic and professional journey, I have been deeply committed to leveraging statistical methodologies to address pressing public health issues. My experiences range from studying opioid use disparities among minority populations to analyzing global health phenomena at Columbia University’s Mailman School of Public Health. My work is driven by a commitment to uncover meaningful insights that influence equitable health interventions.
