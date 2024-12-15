@@ -20,7 +20,7 @@ In conclusion, I discovered that  **NMR**, **readiness to quit**, **race/ethnici
 moderators of the behavioral treatment effects on end-of-treatment (EOT) abstinence `Final_Report_Project2.Rmd` : Rmd file that contains code, 
 analysis and interpretations.
 
-![adjustedtable2](https://github.com/user-attachments/assets/cfcd32e1-1b52-482c-b619-faecc09bbd88)
+https://github.com/dlhawkin/PDA-Final-Project-Portfolio/blob/main/Project2/Project2_Final_Report.pdf
 
  # Dependencies
 The R version and poackages used in this project are indicated below: `R version 4.2.3 (2023-03-15)`
