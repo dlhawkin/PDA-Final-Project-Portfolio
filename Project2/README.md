@@ -16,7 +16,7 @@ In conclusion, I discovered that  **NMR**, **readiness to quit**, **race/ethnici
 
 
 # Key Files
-`Final_Report_Project2.pdf`: Finalize report that consist of the exploratory data analysis and  assessING baseline variables as potential 
+`Project2_Final_Report`.pdf: Finalize report that consist of the exploratory data analysis and  assessING baseline variables as potential 
 moderators of the behavioral treatment effects on end-of-treatment (EOT) abstinence `Final_Report_Project2.Rmd` : Rmd file that contains code, 
 analysis and interpretations.
 
