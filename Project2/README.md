@@ -16,12 +16,11 @@ In conclusion, I discovered that  **NMR**, **readiness to quit**, **race/ethnici
 
 
 # Key Files
-`Project2_Final_Report`.pdf: Finalize report that consist of the exploratory data analysis and  assessING baseline variables as potential 
+`FinalProjectPDA`.pdf: Finalize report that consist of the exploratory data analysis and  assessING baseline variables as potential 
 moderators of the behavioral treatment effects on end-of-treatment (EOT) abstinence `Final Adjusted Final Adjusted Project2.1.Rmd` : Rmd file that contains code, 
 analysis and interpretations.
 
-https://github.com/dlhawkin/PDA-Final-Project-Portfolio/blob/main/Project2/Project2_Final_Report.pdf
-
+(https://github.com/dlhawkin/PDA-Final-Project-Portfolio/blob/main/Project2/FinalProjectPDA.pdf)
  # Dependencies
 The R version and poackages used in this project are indicated below: `R version 4.2.3 (2023-03-15)`
 
